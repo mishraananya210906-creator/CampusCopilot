@@ -1,11 +1,8 @@
 import React, { useState } from 'react';
 import { Upload, FileText, Sparkles, HelpCircle, Target, BookOpen, Send, Check, Copy, Bookmark, Zap } from 'lucide-react';
+import { AIResponse } from './AIResponse';
 
-interface NotesToAIProps {
-  onModelResponse: (data: any) => void;
-}
-
-export const NotesToAI: React.FC<NotesToAIProps> = ({ onModelResponse }) => {
+export const NotesToAI: React.FC = () => {
   const [notesText, setNotesText] = useState('');
   const [fileName, setFileName] = useState('');
   const [loading, setLoading] = useState(false);
@@ -85,7 +82,6 @@ Area(D) = 1/2 ∮_C (x dy - y dx)
       });
       const data = await res.json();
       setResult(data);
-      onModelResponse(data);
     } catch (err) {
       console.error(err);
     } finally {
@@ -293,9 +289,6 @@ Area(D) = 1/2 ∮_C (x dy - y dx)
               </span>
             </div>
             <div className="flex items-center gap-3">
-              <span className="text-xs text-slate-300 font-mono bg-white/5 px-2.5 py-1 rounded-lg border border-white/10">
-                ⚡ {result.latency_ms}ms • {result.tokens} tokens
-              </span>
               <button
                 onClick={handleCopy}
                 className="flex items-center gap-1.5 text-xs px-4 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-white transition-all border border-white/20 font-semibold"
@@ -306,9 +299,7 @@ Area(D) = 1/2 ∮_C (x dy - y dx)
             </div>
           </div>
 
-          <div className="prose prose-invert max-w-none text-slate-200 text-sm sm:text-base leading-relaxed whitespace-pre-line font-sans space-y-3">
-            {result.content}
-          </div>
+          <AIResponse content={result.content} />
         </div>
       )}
     </div>

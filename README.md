@@ -52,9 +52,6 @@ CampusCopilot implements smart tiered model routing to maximize performance whil
 | **Balanced** | `nvidia/nemotron-3-super` | ~650ms | 75% Cheaper | High-yield topics, 10 questions generation, MCQ quiz |
 | **Deep Reasoning** | `nvidia/nemotron-3-ultra` | ~1400ms | Flagship 550B | Complex math proofs, day-by-day study plans, viva grading |
 
-### Live Token Savings Gauge
-The top navigation bar displays a live **Token Savings Meter**, showing how much latency and tokens are saved by routing routine queries to Nano/Super instead of calling Ultra for everything.
-
 ---
 
 ## 🛠️ Quick Start Guide

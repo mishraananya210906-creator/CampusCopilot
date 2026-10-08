@@ -1,36 +1,20 @@
 import React from 'react';
-import { GraduationCap, Cpu, Zap, Settings, TrendingUp } from 'lucide-react';
+import { GraduationCap, Zap, Settings } from 'lucide-react';
 
 interface NebiusHeaderProps {
   lastModel: {
     tier: string;
-    model_name: string;
-    latency_ms: number;
-    tokens: number;
-    simulated: boolean;
-  } | null;
-  metrics: {
-    total_requests: number;
-    tokens_saved_vs_all_ultra: number;
-    avg_latency_ms: number;
-    estimated_savings_percentage: number;
   } | null;
   onOpenSettings: () => void;
 }
 
 export const NebiusHeader: React.FC<NebiusHeaderProps> = ({
   lastModel,
-  metrics,
   onOpenSettings
 }) => {
   const getBadge = () => {
     if (!lastModel) {
-      return (
-        <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-800/80 border border-slate-700/60 text-xs text-slate-300">
-          <Cpu className="w-3.5 h-3.5 text-emerald-400" />
-          <span>Nebius Token Factory Ready</span>
-        </div>
-      );
+      return null;
     }
 
     if (lastModel.tier === 'ultra') {
@@ -38,7 +22,6 @@ export const NebiusHeader: React.FC<NebiusHeaderProps> = ({
         <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-purple-950/70 border border-purple-500/50 text-xs text-purple-200 shadow-sm shadow-purple-900/50 animate-pulse">
           <span className="w-2 h-2 rounded-full bg-purple-400"></span>
           <span className="font-semibold">🧠 Nemotron 3 Ultra (550B Reasoning)</span>
-          <span className="text-[10px] text-purple-300/80">({lastModel.latency_ms}ms)</span>
         </div>
       );
     } else if (lastModel.tier === 'super') {
@@ -46,7 +29,6 @@ export const NebiusHeader: React.FC<NebiusHeaderProps> = ({
         <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-950/70 border border-blue-500/50 text-xs text-blue-200 shadow-sm shadow-blue-900/50">
           <span className="w-2 h-2 rounded-full bg-blue-400"></span>
           <span className="font-semibold">🚀 Nemotron 3 Super (Balanced)</span>
-          <span className="text-[10px] text-blue-300/80">({lastModel.latency_ms}ms)</span>
         </div>
       );
     } else {
@@ -54,7 +36,6 @@ export const NebiusHeader: React.FC<NebiusHeaderProps> = ({
         <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-950/70 border border-emerald-500/50 text-xs text-emerald-200 shadow-sm shadow-emerald-900/50">
           <span className="w-2 h-2 rounded-full bg-emerald-400"></span>
           <span className="font-semibold">⚡ Nemotron 3 Nano (Fast Everyday)</span>
-          <span className="text-[10px] text-emerald-300/80">({lastModel.latency_ms}ms)</span>
         </div>
       );
     }
@@ -81,18 +62,9 @@ export const NebiusHeader: React.FC<NebiusHeaderProps> = ({
           </div>
         </div>
 
-        {/* Live Router & Savings */}
+        {/* Model & Settings */}
         <div className="flex items-center gap-3">
           {getBadge()}
-
-          {metrics && (
-            <div className="hidden md:flex items-center gap-2 px-3 py-1 rounded-full bg-slate-950/80 border border-slate-800 text-xs text-slate-300">
-              <TrendingUp className="w-3.5 h-3.5 text-emerald-400" />
-              <span>
-                <strong className="text-emerald-400">{metrics.estimated_savings_percentage}%</strong> Tokens Saved
-              </span>
-            </div>
-          )}
 
           <button
             onClick={onOpenSettings}

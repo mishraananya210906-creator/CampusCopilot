@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
 import { Award, CheckCircle, XCircle, Sparkles, HelpCircle, ArrowRight, RefreshCw, PenTool, Check } from 'lucide-react';
+import { AIResponse } from './AIResponse';
 
 interface QuizModeProps {
   initialTopic?: string;
-  onModelResponse: (data: any) => void;
 }
 
-export const QuizMode: React.FC<QuizModeProps> = ({ initialTopic = '', onModelResponse }) => {
+export const QuizMode: React.FC<QuizModeProps> = ({ initialTopic = '' }) => {
   const [topic, setTopic] = useState(initialTopic || 'Partial Derivatives & Multivariable Calculus');
   const [quizType, setQuizType] = useState<'mcq' | 'subjective'>('mcq');
   const [loading, setLoading] = useState(false);
@@ -43,7 +43,6 @@ export const QuizMode: React.FC<QuizModeProps> = ({ initialTopic = '', onModelRe
       });
       const data = await res.json();
       setQuestions(data.questions || []);
-      onModelResponse(data);
     } catch (err) {
       console.error(err);
     } finally {
@@ -83,7 +82,6 @@ export const QuizMode: React.FC<QuizModeProps> = ({ initialTopic = '', onModelRe
       });
       const data = await res.json();
       setEvaluationResult(data);
-      onModelResponse(data);
     } catch (err) {
       console.error(err);
     } finally {
@@ -379,14 +377,9 @@ export const QuizMode: React.FC<QuizModeProps> = ({ initialTopic = '', onModelRe
                     {evaluationResult.model_name}
                   </span>
                 </div>
-                <span className="text-xs text-slate-300 font-mono bg-white/5 px-2.5 py-1 rounded-lg border border-white/10">
-                  ⚡ {evaluationResult.latency_ms}ms • {evaluationResult.tokens} tokens
-                </span>
               </div>
 
-              <div className="prose prose-invert max-w-none text-slate-200 text-sm sm:text-base leading-relaxed whitespace-pre-line font-sans space-y-4">
-                {evaluationResult.content}
-              </div>
+              <AIResponse content={evaluationResult.content} />
             </div>
           )}
         </div>

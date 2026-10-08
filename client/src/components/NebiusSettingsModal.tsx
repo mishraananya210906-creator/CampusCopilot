@@ -5,29 +5,39 @@ interface NebiusSettingsModalProps {
   isOpen: boolean;
   onClose: () => void;
   apiKey: string;
-  onSaveKey: (key: string) => void;
-  metrics: any;
+  onSaveKey: (key: string) => Promise<void>;
 }
 
 export const NebiusSettingsModal: React.FC<NebiusSettingsModalProps> = ({
   isOpen,
   onClose,
   apiKey,
-  onSaveKey,
-  metrics
+  onSaveKey
 }) => {
   const [keyInput, setKeyInput] = useState(apiKey);
   const [savedStatus, setSavedStatus] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
 
   if (!isOpen) return null;
 
-  const handleSave = () => {
-    onSaveKey(keyInput);
-    setSavedStatus(true);
-    setTimeout(() => {
-      setSavedStatus(false);
-      onClose();
-    }, 1000);
+  const handleSave = async () => {
+    setIsSaving(true);
+    setErrorMessage('');
+    try {
+      await onSaveKey(keyInput);
+      setSavedStatus(true);
+      setTimeout(() => {
+        setSavedStatus(false);
+        onClose();
+      }, 1000);
+    } catch (error) {
+      setErrorMessage(
+        error instanceof Error ? error.message : 'Nebius API key validation failed.'
+      );
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   return (
@@ -86,17 +96,10 @@ export const NebiusSettingsModal: React.FC<NebiusSettingsModalProps> = ({
             </p>
           </div>
 
-          {metrics && (
-            <div className="grid grid-cols-2 gap-2 pt-2">
-              <div className="bg-slate-950/50 border border-slate-800/60 p-3 rounded-xl">
-                <span className="text-[11px] text-slate-500 block">Total Requests</span>
-                <span className="text-base font-bold text-white">{metrics.total_requests || 0}</span>
-              </div>
-              <div className="bg-slate-950/50 border border-slate-800/60 p-3 rounded-xl">
-                <span className="text-[11px] text-emerald-400/80 block">Tokens Saved</span>
-                <span className="text-base font-bold text-emerald-400">{metrics.tokens_saved_vs_all_ultra || 0}</span>
-              </div>
-            </div>
+          {errorMessage && (
+            <p role="alert" className="text-xs text-red-400">
+              {errorMessage}
+            </p>
           )}
 
           <div className="pt-2 flex justify-end gap-3">
@@ -108,6 +111,7 @@ export const NebiusSettingsModal: React.FC<NebiusSettingsModalProps> = ({
             </button>
             <button
               onClick={handleSave}
+              disabled={isSaving}
               className="flex items-center gap-2 px-5 py-2 rounded-xl text-sm font-semibold text-slate-950 bg-gradient-to-r from-emerald-400 to-teal-300 hover:opacity-95 shadow-lg shadow-emerald-500/20 transition-all"
             >
               {savedStatus ? (
@@ -115,6 +119,8 @@ export const NebiusSettingsModal: React.FC<NebiusSettingsModalProps> = ({
                   <CheckCircle2 className="w-4 h-4" />
                   Saved!
                 </>
+              ) : isSaving ? (
+                'Validating...'
               ) : (
                 'Save Settings'
               )}

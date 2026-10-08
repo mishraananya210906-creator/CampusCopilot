@@ -1,11 +1,8 @@
 import React, { useState } from 'react';
 import { Calendar, Clock, CheckCircle2, Sparkles, BookOpen, ChevronRight, Copy, Check, BarChart, Target } from 'lucide-react';
+import { AIResponse } from './AIResponse';
 
-interface StudyPlannerProps {
-  onModelResponse: (data: any) => void;
-}
-
-export const StudyPlanner: React.FC<StudyPlannerProps> = ({ onModelResponse }) => {
+export const StudyPlanner: React.FC = () => {
   const [subject, setSubject] = useState('Calculus');
   const [daysRemaining, setDaysRemaining] = useState(7);
   const [hoursPerDay, setHoursPerDay] = useState(3);
@@ -46,7 +43,6 @@ export const StudyPlanner: React.FC<StudyPlannerProps> = ({ onModelResponse }) =
       });
       const data = await res.json();
       setPlanResult(data);
-      onModelResponse(data);
     } catch (err) {
       console.error(err);
     } finally {
@@ -238,9 +234,6 @@ export const StudyPlanner: React.FC<StudyPlannerProps> = ({ onModelResponse }) =
             </div>
 
             <div className="flex items-center gap-3">
-              <span className="text-xs text-slate-300 font-mono bg-white/5 px-2.5 py-1 rounded-lg border border-white/10">
-                ⚡ {planResult.latency_ms}ms • {planResult.tokens} tokens
-              </span>
               <button
                 onClick={handleCopy}
                 className="flex items-center gap-1.5 text-xs px-4 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-white transition-all border border-white/20 font-semibold"
@@ -287,9 +280,7 @@ export const StudyPlanner: React.FC<StudyPlannerProps> = ({ onModelResponse }) =
           </div>
 
           {/* Formatted Content */}
-          <div className="prose prose-invert max-w-none text-slate-200 text-sm sm:text-base leading-relaxed whitespace-pre-line font-sans space-y-4">
-            {planResult.content}
-          </div>
+          <AIResponse content={planResult.content} />
         </div>
       )}
     </div>

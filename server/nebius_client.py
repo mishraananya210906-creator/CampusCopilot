@@ -89,6 +89,14 @@ class NebiusClient:
     def update_key(self, api_key: str):
         self.api_key = api_key
 
+    async def validate_api_key(self, api_key: str):
+        async with httpx.AsyncClient(timeout=15.0) as client:
+            response = await client.get(
+                f"{self.base_url.rstrip('/')}/models",
+                headers={"Authorization": f"Bearer {api_key}"},
+            )
+            response.raise_for_status()
+
     async def call_nemotron(
         self,
         tier: str,
@@ -147,8 +155,10 @@ class NebiusClient:
                 print(f"[Nebius Token Factory Error, falling back to Intelligent Engine]: {e}")
 
         # Intelligent Simulation / Demo Fallback
+        if fallback_content is None:
+            raise RuntimeError("Nebius Token Factory is unavailable and no fallback response is configured.")
         latency_ms = model_info["avg_latency_ms"] + (int(time.time() * 1000) % 90)
-        content = fallback_content or "Content generated via Nebius Nemotron Engine."
+        content = fallback_content
         tokens = len(content.split()) * 2 + 110
         metrics_store.record(tier, tokens, latency_ms)
 

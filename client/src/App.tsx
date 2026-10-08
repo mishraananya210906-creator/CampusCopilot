@@ -1,12 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { NebiusSettingsModal } from './components/NebiusSettingsModal';
 import { StudyAssistant } from './components/StudyAssistant';
 import { NotesToAI } from './components/NotesToAI';
 import { StudyPlanner } from './components/StudyPlanner';
 import { QuizMode } from './components/QuizMode';
 import { 
-  Sparkles, FileText, Calendar, Award, Cpu, Settings, 
-  TrendingUp, Zap, BookOpen, Layers, Image as ImageIcon,
+  Sparkles, FileText, Calendar, Award, Cpu, Settings,
+  BookOpen, Layers, Image as ImageIcon,
   ChevronRight, ShieldCheck, GraduationCap
 } from 'lucide-react';
 
@@ -14,8 +14,6 @@ export default function App() {
   const [activeTab, setActiveTab] = useState<'study' | 'notes' | 'planner' | 'quiz'>('study');
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [apiKey, setApiKey] = useState('');
-  const [lastModel, setLastModel] = useState<any>(null);
-  const [metrics, setMetrics] = useState<any>(null);
   const [quizTopic, setQuizTopic] = useState('');
   const [currentSubject, setCurrentSubject] = useState('Multivariable Calculus');
   
@@ -56,49 +54,19 @@ export default function App() {
     { name: 'Organic Chemistry', icon: '🧬', code: 'CHEM 220' },
   ];
 
-  const fetchMetrics = async () => {
-    try {
-      const res = await fetch('/api/metrics');
-      if (res.ok) {
-        const data = await res.json();
-        setMetrics(data);
-      }
-    } catch (e) {
-      console.log('Backend not connected or starting up...');
-    }
-  };
-
-  useEffect(() => {
-    fetchMetrics();
-    const interval = setInterval(fetchMetrics, 10000);
-    return () => clearInterval(interval);
-  }, []);
-
-  const handleModelResponse = (data: any) => {
-    if (data && data.tier) {
-      setLastModel({
-        tier: data.tier,
-        model_name: data.model_name || data.model,
-        latency_ms: data.latency_ms || 350,
-        tokens: data.tokens || 150,
-        simulated: data.simulated || false,
-      });
-      fetchMetrics();
-    }
-  };
-
   const handleSaveApiKey = async (newKey: string) => {
-    setApiKey(newKey);
-    try {
-      await fetch('/api/settings', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ api_key: newKey }),
-      });
-      fetchMetrics();
-    } catch (e) {
-      console.error(e);
+    const response = await fetch('/api/settings', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ api_key: newKey }),
+    });
+    const result = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      throw new Error(
+        typeof result.detail === 'string' ? result.detail : 'Nebius API key validation failed.'
+      );
     }
+    setApiKey(newKey);
   };
 
   const handleLaunchQuiz = (topic: string) => {
@@ -131,7 +99,6 @@ export default function App() {
                   Campus<span className="text-white">Copilot</span>
                 </h1>
               </div>
-              <p className="text-[11px] text-slate-400 font-medium">Nebius Token Factory Edition</p>
             </div>
           </div>
 
@@ -248,12 +215,9 @@ export default function App() {
           </div>
         </div>
 
-        {/* NEBIUS TOKEN FACTORY TELEMETRY WITH CRISP WHITE LABELS */}
-        <div className="p-4 border-t border-white/10 bg-[#090b14]/90 space-y-3">
+        <div className="p-4 border-t border-white/10 bg-[#090b14]/90">
           <div className="flex items-center justify-between">
-            <span className="text-[10px] font-bold text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
-              <Cpu className="w-3.5 h-3.5 text-white" /> Nebius Telemetry
-            </span>
+            <span className="text-[10px] font-bold text-slate-300 uppercase tracking-wider">API Settings</span>
             <button
               onClick={() => setIsSettingsOpen(true)}
               className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-white/10 transition-colors"
@@ -261,25 +225,6 @@ export default function App() {
             >
               <Settings className="w-4 h-4" />
             </button>
-          </div>
-
-          <div className="p-3 rounded-2xl bg-white/5 border border-white/10 space-y-2">
-            <div className="flex items-center justify-between text-xs">
-              <span className="text-slate-400">Active Tier:</span>
-              <span className="font-semibold text-white flex items-center gap-1.5">
-                <span className="w-2 h-2 rounded-full bg-white animate-pulse" />
-                {lastModel ? lastModel.model_name : 'Nemotron Ready'}
-              </span>
-            </div>
-            {metrics && (
-              <div className="flex items-center justify-between text-xs pt-1.5 border-t border-white/10">
-                <span className="text-slate-400">Tokens Saved:</span>
-                <span className="font-bold text-white flex items-center gap-1 font-mono">
-                  <TrendingUp className="w-3.5 h-3.5 text-emerald-400" />
-                  {metrics.estimated_savings_percentage}%
-                </span>
-              </div>
-            )}
           </div>
         </div>
       </aside>
@@ -324,20 +269,6 @@ export default function App() {
               </select>
             </div>
 
-            {/* Model Pill */}
-            {lastModel ? (
-              <div className="flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/10 border border-white/20 text-xs text-white font-mono shadow-md">
-                <span className="w-2 h-2 rounded-full bg-white"></span>
-                <span className="font-bold">{lastModel.model_name}</span>
-                <span className="text-slate-300">({lastModel.latency_ms}ms)</span>
-              </div>
-            ) : (
-              <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/5 border border-white/15 text-xs text-slate-300">
-                <Zap className="w-3.5 h-3.5 text-amber-300" />
-                <span>Nebius Token Factory Ready</span>
-              </div>
-            )}
-
             <button
               onClick={() => setIsSettingsOpen(true)}
               className="p-2 rounded-xl text-slate-300 hover:text-white hover:bg-white/10 transition-colors border border-white/10"
@@ -373,23 +304,21 @@ export default function App() {
         <main className="flex-1 max-w-6xl w-full mx-auto p-4 sm:p-8 space-y-6">
           {activeTab === 'study' && (
             <StudyAssistant
-              onModelResponse={handleModelResponse}
               onLaunchQuiz={handleLaunchQuiz}
             />
           )}
 
           {activeTab === 'notes' && (
-            <NotesToAI onModelResponse={handleModelResponse} />
+            <NotesToAI />
           )}
 
           {activeTab === 'planner' && (
-            <StudyPlanner onModelResponse={handleModelResponse} />
+            <StudyPlanner />
           )}
 
           {activeTab === 'quiz' && (
             <QuizMode
               initialTopic={quizTopic}
-              onModelResponse={handleModelResponse}
             />
           )}
         </main>
@@ -419,7 +348,6 @@ export default function App() {
         onClose={() => setIsSettingsOpen(false)}
         apiKey={apiKey}
         onSaveKey={handleSaveApiKey}
-        metrics={metrics}
       />
     </div>
   );

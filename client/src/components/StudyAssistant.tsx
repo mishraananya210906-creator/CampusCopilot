@@ -1,13 +1,12 @@
 import React, { useState } from 'react';
 import { Search, Sparkles, BookOpen, Brain, Zap, Copy, Check, ArrowRight, Lightbulb } from 'lucide-react';
+import { AIResponse } from './AIResponse';
 
 interface StudyAssistantProps {
-  onModelResponse: (data: any) => void;
   onLaunchQuiz: (topic: string) => void;
 }
 
 export const StudyAssistant: React.FC<StudyAssistantProps> = ({
-  onModelResponse,
   onLaunchQuiz
 }) => {
   const [topic, setTopic] = useState('');
@@ -15,6 +14,7 @@ export const StudyAssistant: React.FC<StudyAssistantProps> = ({
   const [subject, setSubject] = useState('Calculus & Higher Math');
   const [loading, setLoading] = useState(false);
   const [response, setResponse] = useState<any>(null);
+  const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
 
   const quickTopics = [
@@ -25,13 +25,15 @@ export const StudyAssistant: React.FC<StudyAssistantProps> = ({
     { label: "Bayes' Theorem with real intuition", subject: "Probability", icon: "P(A|B)" },
   ];
 
-  const handleExplain = async (selectedTopic?: string, selectedDepth?: 'beginner' | 'exam_ready' | 'rigorous') => {
+  const handleExplain = async (selectedTopic?: string, selectedDepth?: 'beginner' | 'exam_ready' | 'rigorous', selectedSubject?: string) => {
     const qTopic = selectedTopic || topic;
     const qDepth = selectedDepth || depth;
+    const qSubject = selectedSubject || subject;
     if (!qTopic.trim()) return;
 
     setLoading(true);
     setResponse(null);
+    setError(null);
 
     try {
       const res = await fetch('/api/study/explain', {
@@ -40,14 +42,19 @@ export const StudyAssistant: React.FC<StudyAssistantProps> = ({
         body: JSON.stringify({
           topic: qTopic,
           depth: qDepth,
-          subject: subject
+          subject: qSubject
         })
       });
       const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.detail || `AI request failed (${res.status}).`);
+      }
+      if (typeof data.content !== 'string') {
+        throw new Error('The AI response did not include answer content.');
+      }
       setResponse(data);
-      onModelResponse(data);
     } catch (err) {
-      console.error(err);
+      setError(err instanceof Error ? err.message : 'The AI request failed. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -131,7 +138,7 @@ export const StudyAssistant: React.FC<StudyAssistantProps> = ({
                   onClick={() => {
                     setTopic(item.label);
                     setSubject(item.subject);
-                    handleExplain(item.label);
+                    handleExplain(item.label, undefined, item.subject);
                   }}
                   className="text-xs px-3.5 py-1.5 rounded-xl bg-white/5 hover:bg-white/15 border border-white/15 hover:border-white/40 text-white transition-all flex items-center gap-2"
                 >
@@ -193,6 +200,12 @@ export const StudyAssistant: React.FC<StudyAssistantProps> = ({
         </div>
       </div>
 
+      {error && (
+        <div role="alert" className="rounded-xl border border-amber-400/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-100">
+          {error}
+        </div>
+      )}
+
       {/* Loading Skeleton */}
       {loading && (
         <div className="rounded-3xl border border-white/10 bg-[#0e111a]/80 p-8 space-y-4 animate-pulse">
@@ -216,9 +229,6 @@ export const StudyAssistant: React.FC<StudyAssistantProps> = ({
             </div>
 
             <div className="flex items-center gap-3">
-              <span className="text-xs text-slate-300 font-mono bg-white/5 px-2.5 py-1 rounded-lg border border-white/10">
-                ⚡ {response.latency_ms}ms • {response.tokens} tokens
-              </span>
               <button
                 onClick={handleCopy}
                 className="flex items-center gap-1.5 text-xs px-4 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-white transition-all border border-white/20 font-semibold"
@@ -230,9 +240,7 @@ export const StudyAssistant: React.FC<StudyAssistantProps> = ({
           </div>
 
           {/* Formatted Markdown Content */}
-          <div className="prose prose-invert max-w-none text-slate-200 text-sm sm:text-base leading-relaxed whitespace-pre-line font-sans space-y-4">
-            {response.content}
-          </div>
+          <AIResponse content={response.content} />
 
           {/* Follow-up CTA */}
           <div className="pt-5 border-t border-white/10 flex flex-wrap items-center justify-between gap-4">

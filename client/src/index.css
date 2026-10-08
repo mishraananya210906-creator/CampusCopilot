@@ -52,3 +52,32 @@
 ::-webkit-scrollbar-thumb:hover {
   background: #334155;
 }
+
+@layer components {
+  .ai-response {
+    @apply min-w-0 text-sm leading-7 text-slate-200 sm:text-base;
+  }
+
+  .ai-response > :first-child { @apply mt-0; }
+  .ai-response h1 { @apply mt-8 mb-4 font-display text-3xl font-bold text-white; }
+  .ai-response h2 { @apply mt-7 mb-3 font-display text-2xl font-bold text-white; }
+  .ai-response h3 { @apply mt-6 mb-3 font-display text-xl font-semibold text-white; }
+  .ai-response h4 { @apply mt-5 mb-2 font-display text-lg font-semibold text-white; }
+  .ai-response p { @apply my-4; }
+  .ai-response strong { @apply font-semibold text-white; }
+  .ai-response ul { @apply my-4 list-disc space-y-2 pl-6 marker:text-slate-400; }
+  .ai-response ol { @apply my-4 list-decimal space-y-2 pl-6 marker:text-slate-400; }
+  .ai-response li { @apply pl-1; }
+  .ai-response li > p { @apply my-1; }
+  .ai-response blockquote { @apply my-5 border-l-2 border-white/20 pl-4 italic text-slate-300; }
+  .ai-response hr { @apply my-6 border-white/10; }
+  .ai-response a { @apply text-emerald-300 underline underline-offset-2; }
+  .ai-response table { @apply my-5 block w-full overflow-x-auto border-collapse text-left text-sm; }
+  .ai-response th { @apply border-b border-white/20 px-3 py-2 font-semibold text-white; }
+  .ai-response td { @apply border-b border-white/10 px-3 py-2 align-top; }
+  .ai-response :not(pre) > code { @apply rounded bg-white/10 px-1.5 py-0.5 font-mono text-[0.9em] text-emerald-200; }
+  .ai-response pre { @apply my-5 overflow-x-auto rounded-xl border border-white/10 bg-black/30 p-4 font-mono text-sm leading-6; }
+  .ai-response pre code { @apply text-slate-200; }
+  .ai-response .katex { color: inherit; }
+  .ai-response .katex-display { overflow-x: auto; overflow-y: hidden; padding: 0.5rem 0; }
+}

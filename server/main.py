@@ -1,6 +1,7 @@
 import os
 import json
 import re
+import httpx
 from typing import List, Optional, Dict, Any
 from fastapi import FastAPI, UploadFile, File, Form, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
@@ -73,7 +74,26 @@ def get_metrics():
     return metrics_store.to_dict()
 
 @app.post("/api/settings")
-def update_settings(req: SettingsRequest):
+async def update_settings(req: SettingsRequest):
+    if req.api_key.strip() and not req.api_key.startswith("mock_"):
+        try:
+            await nebius_client.validate_api_key(req.api_key)
+        except httpx.HTTPStatusError as exc:
+            if exc.response.status_code in (401, 403):
+                raise HTTPException(
+                    status_code=401,
+                    detail="Nebius rejected the API key."
+                ) from exc
+            raise HTTPException(
+                status_code=502,
+                detail=f"Nebius key validation failed with HTTP {exc.response.status_code}.",
+            ) from exc
+        except httpx.RequestError as exc:
+            raise HTTPException(
+                status_code=502,
+                detail="Unable to reach Nebius Token Factory to validate the API key.",
+            ) from exc
+
     nebius_client.update_key(req.api_key)
     if req.base_url:
         nebius_client.base_url = req.base_url
@@ -114,55 +134,18 @@ async def explain_topic(req: StudyRequest):
 
     user_prompt = f"Topic to explain: {req.topic}\nSubject/Course: {req.subject}\nLevel: {req.depth}"
 
-    # Rich fallback if API key is not yet set
-    fallback = f"""### 💡 The Intuition & Analogy
-Think of **{req.topic}** like adjusting the temperature on a dual-control shower. If you have two knobs—one for hot water ($x$) and one for cold water ($y$)—the total temperature depends on both. 
-When you adjust *only* the hot water knob while keeping the cold water knob completely fixed, you are measuring how the temperature changes with respect to hot water alone. That rate of change is a **partial derivative**!
-
----
-
-### 📐 Core Concept & Formulation
-In multivariable calculus, for a function $f(x, y)$:
-- The partial derivative with respect to $x$, denoted $\\frac{{\\partial f}}{{\\partial x}}$ or $f_x$, measures the instantaneous rate of change of $f$ as $x$ varies while $y$ is held constant.
-- Formally:
-$$\\frac{{\\partial f}}{{\\partial x}} = \\lim_{{h \\to 0}} \\frac{{f(x+h, y) - f(x, y)}}{{h}}$$
-
----
-
-### 🔍 Step-by-Step College Problem
-**Problem:** Find $\\frac{{\\partial f}}{{\\partial x}}$ and $\\frac{{\\partial f}}{{\\partial y}}$ for $f(x, y) = 3x^2y + 4xy^3 - 7x + 2$.
-
-1. **Differentiating with respect to $x$ (Treat $y$ as a constant number like 5):**
-   - Term $3x^2y \\to \\frac{{d}}{{dx}}[3x^2] \\cdot y = 6xy$
-   - Term $4xy^3 \\to 4y^3 \\cdot \\frac{{d}}{{dx}}[x] = 4y^3$
-   - Term $-7x \\to -7$
-   - Constant $+2 \\to 0$
-   $$\\frac{{\\partial f}}{{\\partial x}} = 6xy + 4y^3 - 7$$
-
-2. **Differentiating with respect to $y$ (Treat $x$ as a constant):**
-   - Term $3x^2y \\to 3x^2 \\cdot 1 = 3x^2$
-   - Term $4xy^3 \\to 4x \\cdot 3y^2 = 12xy^2$
-   - Term $-7x \\to 0$
-   - Constant $+2 \\to 0$
-   $$\\frac{{\\partial f}}{{\\partial y}} = 3x^2 + 12xy^2$$
-
----
-
-### ⚠️ Top 2 College Exam Pitfalls
-1. **Forgetting to hold variables constant:** Don't use the product rule between $x$ and $y$ unless both are functions of a third variable $t$. Treat $y$ purely as a constant number.
-2. **Chain Rule Slip-ups:** When differentiating composite functions like $\\sin(xy)$ with respect to $x$, remember the inner derivative gives an extra factor of $y$: $\\frac{{\\partial}}{{\\partial x}}[\\sin(xy)] = y\\cos(xy)$.
-"""
-
     messages = [
         {"role": "system", "content": system_prompt},
         {"role": "user", "content": user_prompt}
     ]
 
-    result = await nebius_client.call_nemotron(
-        tier=tier,
-        messages=messages,
-        fallback_content=fallback
-    )
+    try:
+        result = await nebius_client.call_nemotron(tier=tier, messages=messages)
+    except RuntimeError as exc:
+        raise HTTPException(
+            status_code=503,
+            detail="AI answer unavailable. Check the Nebius Token Factory connection and API key, then try again."
+        ) from exc
     return result
 
 # ----------------- Feature 2: Notes -> AI -----------------

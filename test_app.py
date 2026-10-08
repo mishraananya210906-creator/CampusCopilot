@@ -27,12 +27,16 @@ def run_tests():
         "depth": "beginner",
         "subject": "Calculus"
     })
-    assert res.status_code == 200
-    data = res.json()
-    assert "content" in data and len(data["content"]) > 50
-    print(f"  Model Routed: {data['model_name']} ({data['tier']})")
-    print(f"  Latency: {data['latency_ms']} ms | Tokens: {data['tokens']}")
-    print(f"  Output Excerpt: {data['content'][:120].strip()}...")
+    if res.status_code == 503:
+        assert res.json()["detail"].startswith("AI answer unavailable.")
+        print("  AI provider unavailable; no unrelated fallback answer returned.")
+    else:
+        assert res.status_code == 200
+        data = res.json()
+        assert "content" in data and len(data["content"]) > 50
+        print(f"  Model Routed: {data['model_name']} ({data['tier']})")
+        print(f"  Latency: {data['latency_ms']} ms | Tokens: {data['tokens']}")
+        print(f"  Output Excerpt: {data['content'][:120].strip()}...")
     print("  --> Result: [PASS]")
 
     # 3. Feature 1: Rigorous Derivation (Ultra)
@@ -42,11 +46,15 @@ def run_tests():
         "depth": "rigorous",
         "subject": "Quantum Physics"
     })
-    assert res.status_code == 200
-    data = res.json()
-    assert data["tier"] == "ultra"
-    print(f"  Model Routed: {data['model_name']} ({data['tier']})")
-    print(f"  Latency: {data['latency_ms']} ms | Tokens: {data['tokens']}")
+    if res.status_code == 503:
+        assert res.json()["detail"].startswith("AI answer unavailable.")
+        print("  AI provider unavailable; no unrelated fallback answer returned.")
+    else:
+        assert res.status_code == 200
+        data = res.json()
+        assert data["tier"] == "ultra"
+        print(f"  Model Routed: {data['model_name']} ({data['tier']})")
+        print(f"  Latency: {data['latency_ms']} ms | Tokens: {data['tokens']}")
     print("  --> Result: [PASS]")
 
     # 4. Feature 2: Notes -> AI
